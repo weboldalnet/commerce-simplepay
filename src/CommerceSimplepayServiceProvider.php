@@ -1,13 +1,13 @@
 <?php
 
-namespace Weboldalnet\PackageTemplate;
+namespace Weboldalnet\CommerceSimplepay;
 
 use Illuminate\Support\ServiceProvider;
-use Weboldalnet\PackageTemplate\Support\PackageHelper;
-use Weboldalnet\PackageTemplate\Console\ExtendViewsArticlesCommand;
-use Weboldalnet\PackageTemplate\Console\InstallArticlesCommand;
+use Weboldalnet\CommerceSimplepay\Support\PackageHelper;
+use Weboldalnet\CommerceSimplepay\Console\ExtendViewsCommerceSimplepayCommand;
+use Weboldalnet\CommerceSimplepay\Console\InstallCommerceSimplepayCommand;
 
-class ArticleServiceProvider extends ServiceProvider
+class CommerceSimplepayServiceProvider extends ServiceProvider
 {
     public function boot()
     {
@@ -32,12 +32,14 @@ class ArticleServiceProvider extends ServiceProvider
 
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/commerce-simplepay.php', 'commerce-simplepay');
+
         $this->commands([
-            InstallArticlesCommand::class,
+            InstallCommerceSimplepayCommand::class,
         ]);
 
         $this->commands([
-            ExtendViewsArticlesCommand::class,
+            ExtendViewsCommerceSimplepayCommand::class,
         ]);
     }
 }
