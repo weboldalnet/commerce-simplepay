@@ -1,0 +1,21 @@
+{
+    "name": "weboldalnet/package-template",
+    "description": "teszt",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Weboldalnet\\PackageTemplate\\": [ "src/",  "app/"]
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Weboldalnet\\PackageTemplate\\ArticleServiceProvider"
+            ],
+            "aliases": {
+                "ArticleServiceProvider": "Weboldalnet\\PackageTemplate\\ArticleServiceProvider"
+            }
+        }
+    },
+    "require": {}
+}
