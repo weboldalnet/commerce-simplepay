@@ -1,9 +1,9 @@
 {{-- SimplePay fizetési modul admin menüpontja.
 
-     Csomagváz: egyelőre nincs admin felülete a modulnak, ezért a menüpont
-     ki van kommentelve — így a `commerce-simplepay:extend --view=sidebar` nem tesz
-     törött linket az admin oldalsávba. A fizetési funkció fejlesztésekor
-     kell aktiválni, a testvércsomagok (commerce-szamlazzhu) mintájára.
+     A webshop-ai-default csomag oldalsávja a bekapcsolt fizetési integrációk
+     beállításlinkjeit magától megjeleníti (Webshop → Beállítások alatt), ezért ez
+     itt ki van kommentelve – különben duplán jelenne meg. Akkor kell aktiválni,
+     ha a SimplePay webshop csomag nélkül, önállóan kerül be egy projektbe.
 
 <div class="mb-1">
     <a class="menu-point collapsed"
