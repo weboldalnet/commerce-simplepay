@@ -118,6 +118,53 @@ class SimplepayPaymentProvider implements PaymentProviderInterface
     }
 
     /**
+     * Egy függőben lévő fizetés valódi állapotának lekérdezése a SimplePay-től.
+     *
+     * NEM része a PaymentProvider szerződésnek – a hívó oldal method_exists()-tel
+     * nézi meg, hogy a provider tudja-e (ugyanaz a minta, mint a szállítási
+     * providerek getKind() metódusánál). Így a többi fizetési integrációt
+     * nem kell hozzáigazítani.
+     *
+     * Akkor hasznos, amikor az IPN nem ér el minket (pl. fejlesztői gépen),
+     * vagy még nem érkezett meg: a vásárló így sem ragad a "Fizetés folyamatban"
+     * képernyőn egy már teljesült fizetésnél.
+     *
+     * A hívó a tranzakciót adja át, mert providerenként MÁS mező az azonosító:
+     * a SimplePay a saját kereskedői azonosítónkra (orderRef = transaction_id)
+     * kérdez, a Barion viszont a saját PaymentId-jára (provider_transaction_id).
+     * Stringet is elfogadunk, hogy közvetlenül is hívható legyen.
+     *
+     * @param mixed $transaction PaymentTransaction vagy orderRef string
+     */
+    public function queryStatus($transaction)
+    {
+        $orderRef = is_object($transaction)
+            ? ($transaction->transaction_id ?? null)
+            : $transaction;
+
+        if (!$orderRef) {
+            return null;
+        }
+
+        $transaction = $this->service->queryTransaction((string) $orderRef);
+
+        if (!$transaction || empty($transaction['status'])) {
+            return null;
+        }
+
+        $status = SimplepayPaymentService::mapIpnStatus($transaction['status']);
+
+        return new PaymentCallbackResult([
+            'success' => $status === PaymentStatus::PAID,
+            'status' => $status,
+            'provider' => $this->getCode(),
+            'transaction_id' => $orderRef,
+            'provider_transaction_id' => $transaction['transactionId'] ?? null,
+            'message' => 'SimplePay állapotlekérdezés: ' . $transaction['status'],
+            'raw_payload' => $transaction,
+        ]);
+    }
+    /**
      * IPN feldolgozása (szerver-szerver, POST).
      *
      * Ez a tranzakció végállapotának egyetlen megbízható forrása. Az aláírás

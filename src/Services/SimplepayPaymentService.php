@@ -131,11 +131,51 @@ class SimplepayPaymentService
      *
      * A rendelésszámot használjuk, ahogy a Barionnál is – így a SimplePay admin
      * felületén is azonnal beazonosítható, melyik rendeléshez tartozik.
-     * Sikertelen fizetés után ugyanez az azonosító újrahasználható.
+     *
+     * FONTOS: a SimplePay egy orderRef-et csak EGYSZER fogad el elindított
+     * tranzakcióhoz. Újrapróbálásnál ugyanazzal az azonosítóval 5013-as hibát
+     * ad ("Érvénytelen kereskedő vagy jogosultság"), ami félrevezető: valójában
+     * a foglalt orderRef a baj. Ezért a második indítástól sorszámot fűzünk
+     * hozzá (RENDELESSZAM-2, -3, …).
+     *
+     * A sorszám a MÁR ELINDÍTOTT tranzakciók számából jön (amelyeknek van
+     * transaction_id-juk). A sikertelen indítás nem foglal orderRef-et, ezért
+     * azokat nem számoljuk – így egy elbukott -2 után újra -2 megy ki,
+     * nem ugrik feleslegesen.
      */
     public static function orderRef(PaymentRequestData $data): string
     {
-        return (string) ($data->orderNumber ?: $data->orderId);
+        $base = (string) ($data->orderNumber ?: $data->orderId);
+        $attempt = self::startedAttempts($data->orderId);
+
+        return $attempt > 0 ? $base . '-' . ($attempt + 1) : $base;
+    }
+
+    /**
+     * Hány SimplePay-tranzakció indult már el ehhez a rendeléshez.
+     *
+     * Bármilyen hiba esetén 0-t adunk vissza: ilyenkor a sima rendelésszám megy
+     * ki, ami az első fizetésnél mindig helyes – a fizetés indítását nem
+     * buktathatja el egy nyilvántartási lekérdezés.
+     */
+    protected static function startedAttempts($orderId): int
+    {
+        $model = \Weboldalnet\CommerceCore\Models\PaymentTransaction::class;
+
+        if (!$orderId || !class_exists($model)) {
+            return 0;
+        }
+
+        try {
+            return (int) $model::query()
+                ->where('order_id', $orderId)
+                ->where('provider', 'simplepay')
+                ->whereNotNull('transaction_id')
+                ->where('transaction_id', '!=', '')
+                ->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**
